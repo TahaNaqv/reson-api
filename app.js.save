@@ -1,0 +1,87 @@
+// app.js
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+const port = 4000; // oder was du bevorzugst
+
+// Body-Parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+
+// Routen-Dateien einbinden
+const userRoutes       = require('./user');
+const employerRou// app.jscat > /opt/reson-api/app.js <<'EOF'
+// app.js
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+const port = 4000; // oder was du bevorzugst
+
+// Body-Parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+
+// Routen-Dateien einbinden
+const userRoutes       = require('./user');
+const employerRoutes   = require('./employer');
+const jobRoutes        = require('./jobs');
+const candidateRoutes  = require('./candidate');
+const jobResultRoutes  = require('./job_result');
+const questionRoutes   = require('./question');
+const answerRoutes     = require('./answer');
+const companyRoutes    = require('./company');
+
+// Mounten der Routen
+app.use('/user_accounts', userRoutes);
+app.use('/employers',    employerRoutes);
+app.use('/jobs',         jobRoutes);
+app.use('/candidate',    candidateRoutes);
+app.use('/job_result',   jobResultRoutes);
+app.use('/question',     questionRoutes);
+app.use('/answer',       answerRoutes);
+app.use('/company',      companyRoutes);
+
+// einfache Health-Route
+app.get('/', (_, res) => res.send('OK'));
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+EOF
+
+
+
+const express = require('express');
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+const cors = require('cors')
+const port = 4000; // or any port you prefer
+
+const userRoutes = require('./user');
+const employerRoutes = require('./employer'); 
+const jobRoutes = require('./jobs');
+const candidateRoutes = require('./candidate');
+const jobResultRoutes = require('./job_result');
+const questionRoutes = require('./question');
+const answerRoutes = require('./answer');
+const companyRoutes = require('./company');
+
+app.use(cors())
+// Use the user and employer routes
+app.use('/user_accounts', userRoutes);
+app.use('/employers', employerRoutes);
+app.use('/jobs', jobRoutes);
+app.use('/candidate', candidateRoutes);
+app.use('/job_result', jobResultRoutes);
+app.use('/question', questionRoutes);
+app.use('/answer', answerRoutes);
+app.use('/company', companyRoutes);
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
