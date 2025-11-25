@@ -7,10 +7,11 @@ const bcrypt = require('bcrypt');
 
 // Add your MySQL database configuration
 const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 });
 
 // Connect to MySQL
@@ -31,7 +32,7 @@ router.get('/:user_id', (req, res) => {
     db.query('SELECT * FROM user_account WHERE user_id = ?', [userId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (results.length === 0) {
             res.status(200).json({ status: 'false', message: 'User account not found' });
         } else {
@@ -45,7 +46,7 @@ router.get('/', (req, res) => {
     db.query('SELECT * FROM user_account', (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else {
             res.json(results);
         }
@@ -62,7 +63,7 @@ router.post('/login', (req, res) => {
     db.query('SELECT * FROM user_account WHERE user_email_address = ?', [email], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            return res.status(500).send('Internal Server Error');
+            return res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (results.length === 0) {
             return res.status(401).json({ status: 'false', message: 'Invalid email or password' });
         } else {
@@ -72,7 +73,7 @@ router.post('/login', (req, res) => {
             bcrypt.compare(password, hashedPassword, (err, isMatch) => {
                 if (err) {
                     console.error('Error comparing passwords:', err);
-                    return res.status(500).send('Internal Server Error');
+                    return res.status(500).json({ message: 'Internal Server Error', error: err.message });
                 }
 
                 if (isMatch) {
@@ -87,9 +88,9 @@ router.post('/login', (req, res) => {
 
 
 router.post('/', (req, res) => {
-    const { user_email_address, user_name, password} = req.body;
+    const { user_email_address, user_name, password } = req.body;
 
-	console.log("--- register user", user_email_address, user_na);
+    console.log("--- register user", user_email_address, user_name);
     if (!user_email_address || !user_name || !password) {
         return res.status(400).json({ error: 'All fields are required' });
     }
@@ -97,43 +98,44 @@ router.post('/', (req, res) => {
     // Check if email is already in use
     db.query('SELECT * FROM user_account WHERE user_email_address = ?', [user_email_address], (err, results) => {
         if (err) {
-            return res.status(500).send({'message': 'Internal server error'});
+            console.error('Error executing query:', err);
+            return res.status(500).json({ message: 'Internal server error', error: err.message });
         } else if (results.length === 1 || results.length >= 1) {
             return res.status(400).json({ 'message': 'Email address already exists' });
         } else {
-                // Hash the password
-        bcrypt.hash(password, 10, (err, hashedPassword) => {
-            if (err) {
-                console.error('Error hashing password:', err);
-                return res.status(500).send('Internal Server Error');
-            }
-
-            const newUser = {
-                user_name,
-                user_email_address,
-                password: hashedPassword,
-                role: 'recruiter',
-                created_date: new Date(),
-                last_modified_date: null // Set last_modified_date to null here
-            };
-
-            db.query('INSERT INTO user_account SET ?', newUser, (err, result) => {
+            // Hash the password
+            bcrypt.hash(password, 10, (err, hashedPassword) => {
                 if (err) {
-                    // Check if the error is due to duplicate email address
-                    if (err.code === 'ER_DUP_ENTRY') {
-                        return res.status(400).json({ error: 'Email address already exists' });
-                    } else {
-                        console.error('Error executing query:', err);
-                        return res.status(500).send('Internal Server Error');
-                    }
-                } else {
-                    res.status(201).json({ message: 'User account created successfully', user_id: result.insertId });
+                    console.error('Error hashing password:', err);
+                    return res.status(500).json({ message: 'Internal Server Error', error: err.message });
                 }
+
+                const newUser = {
+                    user_name,
+                    user_email_address,
+                    password: hashedPassword,
+                    role: 'recruiter',
+                    created_date: new Date(),
+                    last_modified_date: null // Set last_modified_date to null here
+                };
+
+                db.query('INSERT INTO user_account SET ?', newUser, (err, result) => {
+                    if (err) {
+                        // Check if the error is due to duplicate email address
+                        if (err.code === 'ER_DUP_ENTRY') {
+                            return res.status(400).json({ error: 'Email address already exists' });
+                        } else {
+                            console.error('Error executing query:', err);
+                            return res.status(500).json({ message: 'Internal Server Error', error: err.message });
+                        }
+                    } else {
+                        res.status(201).json({ message: 'User account created successfully', user_id: result.insertId });
+                    }
+                });
             });
-        });
         }
     })
-    
+
 });
 
 
@@ -157,9 +159,9 @@ router.put('/:user_id', (req, res) => {
     db.query('UPDATE user_account SET ? WHERE user_id = ?', [updatedUser, userId], (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (result.affectedRows === 0) {
-            res.status(404).send('User account not found');
+            res.status(404).json({ message: 'User account not found' });
         } else {
             res.json({ message: 'User account updated successfully' });
         }
@@ -173,9 +175,9 @@ router.delete('/:user_id', (req, res) => {
     db.query('DELETE FROM user_account WHERE user_id = ?', [userId], (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (result.affectedRows === 0) {
-            res.status(404).send('User account not found');
+            res.status(404).json({ message: 'User account not found' });
         } else {
             res.json({ message: 'User account deleted successfully' });
         }
