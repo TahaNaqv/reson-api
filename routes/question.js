@@ -1,22 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql');
-
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
-
-db.connect(err => {
-    if (err) {
-        console.error('Error connecting to MySQL:', err);
-    } else {
-        console.log('Connected to MySQL database');
-    }
-});
+const db = require('../config/database');
 
 router.use(express.json());
 
@@ -26,7 +10,7 @@ router.get('/job/:job_id', (req, res) => {
     db.query('SELECT * FROM question_table WHERE job_id = ?', [jobId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else {
             res.json(results);
         }
@@ -39,9 +23,9 @@ router.get('/:question_id', (req, res) => {
     db.query('SELECT * FROM question_table WHERE question_id = ?', [questionId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (results.length === 0) {
-            res.status(404).send('Question not found');
+            res.status(404).json({ message: 'Question not found' });
         } else {
             res.json(results[0]);
         }
@@ -69,7 +53,7 @@ router.post('/', (req, res) => {
     db.query('INSERT INTO question_table SET ?', newQuestion, (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else {
             res.status(201).json({ message: 'Question created successfully', question_id: result.insertId });
         }
@@ -97,9 +81,9 @@ router.put('/:question_id', (req, res) => {
     db.query('UPDATE question_table SET ? WHERE question_id = ?', [updatedQuestion, questionId], (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (result.affectedRows === 0) {
-            res.status(404).send('Question not found');
+            res.status(404).json({ message: 'Question not found' });
         } else {
             res.json({ message: 'Question updated successfully' });
         }
@@ -113,9 +97,9 @@ router.delete('/:question_id', (req, res) => {
     db.query('DELETE FROM question_table WHERE question_id = ?', [questionId], (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (result.affectedRows === 0) {
-            res.status(404).send('Question not found');
+            res.status(404).json({ message: 'Question not found' });
         } else {
             res.json({ message: 'Question deleted successfully' });
         }

@@ -1,22 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql');
-
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
-
-db.connect(err => {
-    if (err) {
-        console.error('Error connecting to MySQL:', err);
-    } else {
-        console.log('Connected to MySQL database');
-    }
-});
+const db = require('../config/database');
 
 router.use(express.json());
 
@@ -25,7 +9,7 @@ router.get('/', (req, res) => {
     db.query('SELECT * FROM employer_details', (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else {
             res.json(results);
         }
@@ -38,9 +22,9 @@ router.get('/:employer_id', (req, res) => {
     db.query('SELECT * FROM employer_details WHERE employer_id = ?', [employerId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (results.length === 0) {
-            res.status(404).send('Employer not found');
+            res.status(404).json({ message: 'Employer not found' });
         } else {
             res.json(results[0]);
         }
@@ -78,7 +62,7 @@ router.post('/', (req, res) => {
     db.query('INSERT INTO employer_details SET ?', newEmployer, (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else {
             res.status(201).json({ message: 'Employer created successfully', employer_id: result.insertId });
         }
@@ -116,9 +100,9 @@ router.put('/:employer_id', (req, res) => {
     db.query('UPDATE employer_details SET ? WHERE employer_id = ?', [updatedEmployer, employerId], (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (result.affectedRows === 0) {
-            res.status(404).send('Employer not found');
+            res.status(404).json({ message: 'Employer not found' });
         } else {
             res.json({ message: 'Employer updated successfully' });
         }
@@ -132,9 +116,9 @@ router.delete('/:employer_id', (req, res) => {
     db.query('DELETE FROM employer_details WHERE employer_id = ?', [employerId], (err, result) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (result.affectedRows === 0) {
-            res.status(404).send('Employer not found');
+            res.status(404).json({ message: 'Employer not found' });
         } else {
             res.json({ message: 'Employer deleted successfully' });
         }

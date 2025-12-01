@@ -2,44 +2,11 @@
 
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql');
 const bcrypt = require('bcrypt');
-
-// Add your MySQL database configuration
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
-
-// Connect to MySQL
-db.connect(err => {
-    if (err) {
-        console.error('Error connecting to MySQL:', err);
-    } else {
-        console.log('Connected to MySQL database');
-    }
-});
+const db = require('../config/database');
 
 // Middleware to parse JSON in the request body
 router.use(express.json());
-
-// Get a specific user account
-router.get('/:user_id', (req, res) => {
-    const userId = req.params.user_id;
-    db.query('SELECT * FROM user_account WHERE user_id = ?', [userId], (err, results) => {
-        if (err) {
-            console.error('Error executing query:', err);
-            res.status(500).json({ message: 'Internal Server Error', error: err.message });
-        } else if (results.length === 0) {
-            res.status(200).json({ status: 'false', message: 'User account not found' });
-        } else {
-            res.json({ user: results[0], status: 'true', message: 'User retrieved successfully' });
-        }
-    });
-});
 
 // Get all user accounts
 router.get('/', (req, res) => {
@@ -53,6 +20,7 @@ router.get('/', (req, res) => {
     });
 });
 
+// Login route (must be before /:user_id to avoid route conflicts)
 router.post('/login', (req, res) => {
     const { email, password } = req.body;
 
@@ -86,6 +54,20 @@ router.post('/login', (req, res) => {
     });
 });
 
+// Get a specific user account
+router.get('/:user_id', (req, res) => {
+    const userId = req.params.user_id;
+    db.query('SELECT * FROM user_account WHERE user_id = ?', [userId], (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ message: 'Internal Server Error', error: err.message });
+        } else if (results.length === 0) {
+            res.status(200).json({ status: 'false', message: 'User account not found' });
+        } else {
+            res.json({ user: results[0], status: 'true', message: 'User retrieved successfully' });
+        }
+    });
+});
 
 router.post('/', (req, res) => {
     const { user_email_address, user_name, password } = req.body;

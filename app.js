@@ -1,31 +1,34 @@
-/* app.js (Reson API) */
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-const cors = require('cors');
-const port = 4000; // or any port you prefer
-
-const userRoutes = require('./user');
-const employerRoutes = require('./employer');
-const jobRoutes = require('./jobs');
-const candidateRoutes = require('./candidate');
-const jobResultRoutes = require('./job_result');
-const questionRoutes = require('./question');
-const answerRoutes = require('./answer');
-const companyRoutes = require('./company');
-
 app.use(cors());
 
-// Use the user and employer routes
-// --- Basic checks ---
+// Import routes
+const userRoutes = require('./routes/user');
+const employerRoutes = require('./routes/employer');
+const jobRoutes = require('./routes/jobs');
+const candidateRoutes = require('./routes/candidate');
+const jobResultRoutes = require('./routes/job_result');
+const questionRoutes = require('./routes/question');
+const answerRoutes = require('./routes/answer');
+const companyRoutes = require('./routes/company');
+
+// Import middleware
+const errorHandler = require('./middleware/errorHandler');
+const notFound = require('./middleware/notFound');
+
+// Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
-// Optional: eine kleine Root-Antwort statt 404
+// Root endpoint
 app.get('/', (req, res) => res.json({ name: 'Reson API', ok: true }));
+
+// API Routes
 app.use('/user_accounts', userRoutes);
 app.use('/employers', employerRoutes);
 app.use('/jobs', jobRoutes);
@@ -35,20 +38,12 @@ app.use('/question', questionRoutes);
 app.use('/answer', answerRoutes);
 app.use('/company', companyRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-    error: process.env.NODE_ENV === 'production' ? {} : err.stack
-  });
-});
+// Error handling (must be last)
+app.use(notFound);
+app.use(errorHandler);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
+// Start server
+const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
