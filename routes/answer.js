@@ -32,7 +32,7 @@ router.get('/candidate/:candidate_id', (req, res) => {
 // Get answers from a particular candidate for a particular job
 router.get('/candidate/:candidate_id/job/:job_id', (req, res) => {
   const candidateId = req.params.candidate_id;
-  const jobId = req.params.job_id;  
+  const jobId = req.params.job_id;
   db.query('SELECT * FROM answer_table WHERE candidate_id = ? AND job_id = ?', [candidateId, jobId], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
@@ -47,6 +47,19 @@ router.get('/candidate/:candidate_id/job/:job_id', (req, res) => {
 router.get('/question/:question_id', (req, res) => {
   const questionId = req.params.question_id;
   db.query('SELECT * FROM answer_table WHERE question_id = ?', [questionId], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+// Get all answers for a specific job
+router.get('/job/:job_id', (req, res) => {
+  const jobId = req.params.job_id;
+  db.query('SELECT * FROM answer_table WHERE job_id = ?', [jobId], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
       res.status(500).json({ message: 'Internal Server Error', error: err.message });
