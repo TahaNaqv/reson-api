@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { validateIdParam, isValidId } = require('../utils/validation');
 
 router.use(express.json());
 
@@ -18,7 +19,10 @@ router.get('/', (req, res) => {
 
 // Get answers from a particular candidate
 router.get('/candidate/:candidate_id', (req, res) => {
-  const candidateId = req.params.candidate_id;
+  const candidateId = validateIdParam(req.params.candidate_id);
+  if (!candidateId) {
+    return res.status(400).json({ error: 'Invalid candidate ID' });
+  }
   db.query('SELECT * FROM answer_table WHERE candidate_id = ?', [candidateId], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
@@ -31,8 +35,11 @@ router.get('/candidate/:candidate_id', (req, res) => {
 
 // Get answers from a particular candidate for a particular job
 router.get('/candidate/:candidate_id/job/:job_id', (req, res) => {
-  const candidateId = req.params.candidate_id;
-  const jobId = req.params.job_id;
+  const candidateId = validateIdParam(req.params.candidate_id);
+  const jobId = validateIdParam(req.params.job_id);
+  if (!candidateId || !jobId) {
+    return res.status(400).json({ error: 'Invalid candidate ID or job ID' });
+  }
   db.query('SELECT * FROM answer_table WHERE candidate_id = ? AND job_id = ?', [candidateId, jobId], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
@@ -45,7 +52,10 @@ router.get('/candidate/:candidate_id/job/:job_id', (req, res) => {
 
 // Get answers for a specific question
 router.get('/question/:question_id', (req, res) => {
-  const questionId = req.params.question_id;
+  const questionId = validateIdParam(req.params.question_id);
+  if (!questionId) {
+    return res.status(400).json({ error: 'Invalid question ID' });
+  }
   db.query('SELECT * FROM answer_table WHERE question_id = ?', [questionId], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
@@ -58,7 +68,10 @@ router.get('/question/:question_id', (req, res) => {
 
 // Get all answers for a specific job
 router.get('/job/:job_id', (req, res) => {
-  const jobId = req.params.job_id;
+  const jobId = validateIdParam(req.params.job_id);
+  if (!jobId) {
+    return res.status(400).json({ error: 'Invalid job ID' });
+  }
   db.query('SELECT * FROM answer_table WHERE job_id = ?', [jobId], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
@@ -71,7 +84,10 @@ router.get('/job/:job_id', (req, res) => {
 
 // Get a specific answer
 router.get('/:answer_id', (req, res) => {
-  const answerId = req.params.answer_id;
+  const answerId = validateIdParam(req.params.answer_id);
+  if (!answerId) {
+    return res.status(400).json({ error: 'Invalid answer ID' });
+  }
   db.query('SELECT * FROM answer_table WHERE answer_id = ?', [answerId], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
@@ -90,6 +106,17 @@ router.post('/', (req, res) => {
 
   if (!candidate_id || !answer_url || !answer_title || !answer_key || !job_s3_folder) {
     return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  // Validate ID fields
+  if (!isValidId(candidate_id)) {
+    return res.status(400).json({ error: 'Invalid candidate ID' });
+  }
+  if (question_id && !isValidId(question_id)) {
+    return res.status(400).json({ error: 'Invalid question ID' });
+  }
+  if (job_id && !isValidId(job_id)) {
+    return res.status(400).json({ error: 'Invalid job ID' });
   }
 
   const newAnswer = {
@@ -116,7 +143,10 @@ router.post('/', (req, res) => {
 
 // Update an answer
 router.put('/:answer_id', (req, res) => {
-  const answerId = req.params.answer_id;
+  const answerId = validateIdParam(req.params.answer_id);
+  if (!answerId) {
+    return res.status(400).json({ error: 'Invalid answer ID' });
+  }
   const { candidate_id, job_id, question_id, answer_url, answer_title, answer_key, job_s3_folder, answer_transcript } = req.body;
 
   if (!candidate_id || !answer_url || !answer_title || !answer_key || !job_s3_folder) {
@@ -148,7 +178,10 @@ router.put('/:answer_id', (req, res) => {
 
 // Delete an answer
 router.delete('/:answer_id', (req, res) => {
-  const answerId = req.params.answer_id;
+  const answerId = validateIdParam(req.params.answer_id);
+  if (!answerId) {
+    return res.status(400).json({ error: 'Invalid answer ID' });
+  }
 
   db.query('DELETE FROM answer_table WHERE answer_id = ?', [answerId], (err, result) => {
     if (err) {

@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { validateIdParam, isValidId } = require('../utils/validation');
 
 router.use(express.json());
 
 // Get all questions for a specific job
 router.get('/job/:job_id', (req, res) => {
-    const jobId = req.params.job_id;
+    const jobId = validateIdParam(req.params.job_id);
+    if (!jobId) {
+        return res.status(400).json({ error: 'Invalid job ID' });
+    }
     db.query('SELECT * FROM question_table WHERE job_id = ?', [jobId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
@@ -19,7 +23,10 @@ router.get('/job/:job_id', (req, res) => {
 
 // Get a specific question
 router.get('/:question_id', (req, res) => {
-    const questionId = req.params.question_id;
+    const questionId = validateIdParam(req.params.question_id);
+    if (!questionId) {
+        return res.status(400).json({ error: 'Invalid question ID' });
+    }
     db.query('SELECT * FROM question_table WHERE question_id = ?', [questionId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
@@ -38,6 +45,11 @@ router.post('/', (req, res) => {
 
     if (!question_key || !job_id || !job_s3_folder || !question_title || !question_video_url) {
         return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate job_id
+    if (!isValidId(job_id)) {
+        return res.status(400).json({ error: 'Invalid job ID' });
     }
 
     const newQuestion = {
@@ -62,7 +74,10 @@ router.post('/', (req, res) => {
 
 // Update a question
 router.put('/:question_id', (req, res) => {
-    const questionId = req.params.question_id;
+    const questionId = validateIdParam(req.params.question_id);
+    if (!questionId) {
+        return res.status(400).json({ error: 'Invalid question ID' });
+    }
     const { question_key, job_s3_folder, question_title, question_video_url, question_transcript } = req.body;
 
     if (!question_key || !job_s3_folder || !question_title || !question_video_url) {
@@ -74,8 +89,8 @@ router.put('/:question_id', (req, res) => {
         question_transcript,
         job_s3_folder,
         question_title,
-        question_video_url,
-        created_date: new Date()
+        question_video_url
+        // Note: created_date is not updated to preserve original creation date
     };
 
     db.query('UPDATE question_table SET ? WHERE question_id = ?', [updatedQuestion, questionId], (err, result) => {
@@ -92,7 +107,10 @@ router.put('/:question_id', (req, res) => {
 
 // Delete a question
 router.delete('/:question_id', (req, res) => {
-    const questionId = req.params.question_id;
+    const questionId = validateIdParam(req.params.question_id);
+    if (!questionId) {
+        return res.status(400).json({ error: 'Invalid question ID' });
+    }
 
     db.query('DELETE FROM question_table WHERE question_id = ?', [questionId], (err, result) => {
         if (err) {

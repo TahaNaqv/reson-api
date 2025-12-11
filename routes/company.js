@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { validateIdParam, isValidEmail } = require('../utils/validation');
 
 router.use(express.json());
 
@@ -18,7 +19,10 @@ router.get('/', (req, res) => {
 
 // Get a specific company
 router.get('/:company_id', (req, res) => {
-    const companyId = req.params.company_id;
+    const companyId = validateIdParam(req.params.company_id);
+    if (!companyId) {
+        return res.status(400).json({ error: 'Invalid company ID' });
+    }
     db.query('SELECT * FROM company WHERE company_id = ?', [companyId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
@@ -33,7 +37,10 @@ router.get('/:company_id', (req, res) => {
 
 // Get companies based on user_id
 router.get('/user/:user_id', (req, res) => {
-    const userId = req.params.user_id;
+    const userId = validateIdParam(req.params.user_id);
+    if (!userId) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
     db.query('SELECT * FROM company WHERE user_id = ?', [userId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
@@ -47,6 +54,16 @@ router.get('/user/:user_id', (req, res) => {
 // Create a new company
 router.post('/', (req, res) => {
     const { company_name, user_id, company_website, company_email_address, company_logo, company_logo_key, company_s3folder, company_description, company_team_size, company_stage, company_address, company_country, company_values, company_working_environment, company_growth, company_diversity, company_vision, company_ceo_video_url, company_ceo_video_key } = req.body;
+
+    // Validate required fields
+    if (!company_name || !user_id) {
+        return res.status(400).json({ error: 'Company name and user ID are required' });
+    }
+
+    // Validate email format if provided
+    if (company_email_address && !isValidEmail(company_email_address)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
 
     const newCompany = {
         user_id,
@@ -84,8 +101,16 @@ router.post('/', (req, res) => {
 
 // Update a company
 router.put('/:company_id', (req, res) => {
-    const companyId = req.params.company_id;
+    const companyId = validateIdParam(req.params.company_id);
+    if (!companyId) {
+        return res.status(400).json({ error: 'Invalid company ID' });
+    }
     const { company_name, user_id, company_website, company_email_address, company_logo, company_logo_key, company_s3folder, company_description, company_team_size, company_stage, company_address, company_country, company_values, company_working_environment, company_growth, company_diversity, company_vision, company_ceo_video_url, company_ceo_video_key } = req.body;
+
+    // Validate email format if provided
+    if (company_email_address && !isValidEmail(company_email_address)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
 
     const updatedCompany = {
         user_id,
@@ -124,7 +149,10 @@ router.put('/:company_id', (req, res) => {
 
 // Delete a company
 router.delete('/:company_id', (req, res) => {
-    const companyId = req.params.company_id;
+    const companyId = validateIdParam(req.params.company_id);
+    if (!companyId) {
+        return res.status(400).json({ error: 'Invalid company ID' });
+    }
 
     db.query('DELETE FROM company WHERE company_id = ?', [companyId], (err, result) => {
         if (err) {

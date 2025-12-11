@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { validateIdParam, isValidId } = require('../utils/validation');
 
 router.use(express.json());
 
@@ -18,13 +19,16 @@ router.get('/', (req, res) => {
 
 // Get all results for specific job_id
 router.get('/job/:job_id', (req, res) => {
-    const jobId = req.params.job_id;
+    const jobId = validateIdParam(req.params.job_id);
+    if (!jobId) {
+        return res.status(400).json({ error: 'Invalid job ID' });
+    }
     db.query('SELECT * FROM job_result WHERE job_id = ?', [jobId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
             res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (results.length === 0) {
-            res.json({"response": "Job result not found"});
+            res.status(404).json({ message: 'Job result not found' });
         } else {
             res.json(results);
         }
@@ -33,29 +37,35 @@ router.get('/job/:job_id', (req, res) => {
 
 // Get candidate's status for a particular job id
 router.get('/jobId/:job_id/candidateId/:candidate_id', (req, res) => {
-    const jobId = req.params.job_id;
-    const candidateId = req.params.candidate_id;
+    const jobId = validateIdParam(req.params.job_id);
+    const candidateId = validateIdParam(req.params.candidate_id);
+    if (!jobId || !candidateId) {
+        return res.status(400).json({ error: 'Invalid job ID or candidate ID' });
+    }
     db.query('SELECT * FROM job_result WHERE candidate_id = ? AND job_id = ?', [candidateId, jobId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
             res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (results.length === 0) {
-            res.json({"status": "false", "response": "Job result not found"});
+            res.status(404).json({ message: 'Job result not found' });
         } else {
             res.json(results);
         }
     });
 });
 
-// Get all results for specific job_id
+// Get all results for specific candidate_id
 router.get('/candidate/:candidate_id', (req, res) => {
-    const candidateId = req.params.candidate_id;
+    const candidateId = validateIdParam(req.params.candidate_id);
+    if (!candidateId) {
+        return res.status(400).json({ error: 'Invalid candidate ID' });
+    }
     db.query('SELECT * FROM job_result WHERE candidate_id = ?', [candidateId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
             res.status(500).json({ message: 'Internal Server Error', error: err.message });
         } else if (results.length === 0) {
-            res.json({"response": "Job result not found"});
+            res.status(404).json({ message: 'Job result not found' });
         } else {
             res.json(results[0]);
         }
@@ -64,7 +74,10 @@ router.get('/candidate/:candidate_id', (req, res) => {
 
 // Get a specific job interaction
 router.get('/:interaction_id', (req, res) => {
-    const interactionId = req.params.interaction_id;
+    const interactionId = validateIdParam(req.params.interaction_id);
+    if (!interactionId) {
+        return res.status(400).json({ error: 'Invalid interaction ID' });
+    }
     db.query('SELECT * FROM job_result WHERE interaction_id = ?', [interactionId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
@@ -83,6 +96,14 @@ router.post('/', (req, res) => {
 
     if (!candidate_id || !job_id || !status || !ai_output) {
         return res.status(400).json({ error: 'Candidate ID, Job ID, and Status are required fields' });
+    }
+
+    // Validate ID fields
+    if (!isValidId(candidate_id)) {
+        return res.status(400).json({ error: 'Invalid candidate ID' });
+    }
+    if (!isValidId(job_id)) {
+        return res.status(400).json({ error: 'Invalid job ID' });
     }
 
     const newInteraction = {
@@ -106,7 +127,10 @@ router.post('/', (req, res) => {
 
 // Update a job interaction
 router.put('/:interaction_id', (req, res) => {
-    const interactionId = req.params.interaction_id;
+    const interactionId = validateIdParam(req.params.interaction_id);
+    if (!interactionId) {
+        return res.status(400).json({ error: 'Invalid interaction ID' });
+    }
     const { status, ai_output} = req.body;
 
     if (!status) {
@@ -133,7 +157,10 @@ router.put('/:interaction_id', (req, res) => {
 
 // Delete a job interaction
 router.delete('/:interaction_id', (req, res) => {
-    const interactionId = req.params.interaction_id;
+    const interactionId = validateIdParam(req.params.interaction_id);
+    if (!interactionId) {
+        return res.status(400).json({ error: 'Invalid interaction ID' });
+    }
 
     db.query('DELETE FROM job_result WHERE interaction_id = ?', [interactionId], (err, result) => {
         if (err) {

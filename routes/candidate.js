@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { validateIdParam, isValidEmail } = require('../utils/validation');
 
 router.use(express.json());
 
@@ -18,7 +19,10 @@ router.get('/', (req, res) => {
 
 // Get a specific candidate
 router.get('/:candidate_id', (req, res) => {
-    const candidateId = req.params.candidate_id;
+    const candidateId = validateIdParam(req.params.candidate_id);
+    if (!candidateId) {
+        return res.status(400).json({ error: 'Invalid candidate ID' });
+    }
     db.query('SELECT * FROM candidate_details WHERE candidate_id = ?', [candidateId], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
@@ -54,6 +58,11 @@ router.post('/', (req, res) => {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
+    // Validate email format
+    if (!isValidEmail(candidate_email_address)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
     const newCandidate = {
         candidate_first_name,
         candidate_last_name,
@@ -79,11 +88,19 @@ router.post('/', (req, res) => {
 
 // Update a candidate
 router.put('/:candidate_id', (req, res) => {
-    const candidateId = req.params.candidate_id;
+    const candidateId = validateIdParam(req.params.candidate_id);
+    if (!candidateId) {
+        return res.status(400).json({ error: 'Invalid candidate ID' });
+    }
     const { candidate_first_name, candidate_last_name, candidate_profile_image, candidate_img_key, candidate_s3_folder, candidate_dob, candidate_email_address, skills } = req.body;
 
     if ( !candidate_first_name || !candidate_last_name || !candidate_profile_image || !candidate_img_key || !candidate_s3_folder || !candidate_dob || !candidate_email_address || !skills ) {
         return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate email format
+    if (!isValidEmail(candidate_email_address)) {
+        return res.status(400).json({ error: 'Invalid email format' });
     }
 
     const updatedCandidate = {
@@ -112,7 +129,10 @@ router.put('/:candidate_id', (req, res) => {
 
 // Delete a candidate
 router.delete('/:candidate_id', (req, res) => {
-    const candidateId = req.params.candidate_id;
+    const candidateId = validateIdParam(req.params.candidate_id);
+    if (!candidateId) {
+        return res.status(400).json({ error: 'Invalid candidate ID' });
+    }
 
     db.query('DELETE FROM candidate_details WHERE candidate_id = ?', [candidateId], (err, result) => {
         if (err) {
